@@ -11,7 +11,9 @@ function keyOf(category, title) {
 }
 
 async function loadMenu() {
-  const res = await fetch('menu.json', { cache: 'no-store' });
+  const url = new URL('menu.json', window.location.href);
+  url.searchParams.set('v', String(Date.now()));
+  const res = await fetch(url.toString());
   if (!res.ok) throw new Error('menu.json not found');
   return await res.json();
 }
@@ -228,7 +230,8 @@ function main() {
       renderCart();
       wireValidation();
     })
-    .catch(() => {
+    .catch((err) => {
+      console.error('Failed to load menu', err);
       document.getElementById('subtitle').textContent = 'Не удалось загрузить меню';
     });
 }
