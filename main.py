@@ -6,7 +6,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 from bot.config import load_config
 from bot.db import init_db
-from bot.handlers import admin, booking, common, menu, order
+from bot.handlers import common, webapp
 
 
 async def main() -> None:
@@ -22,10 +22,7 @@ async def main() -> None:
     dp = Dispatcher(storage=MemoryStorage())
 
     dp.include_router(common.router)
-    dp.include_router(admin.router)
-    dp.include_router(menu.router)
-    dp.include_router(order.router)
-    dp.include_router(booking.router)
+    dp.include_router(webapp.router)
 
     await dp.start_polling(bot, config=config)
 

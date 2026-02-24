@@ -15,12 +15,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
 
 def main_menu_kb(*, include_admin: bool = False) -> ReplyKeyboardMarkup:
     builder = ReplyKeyboardBuilder()
-    builder.add(KeyboardButton(text="🍽 Меню"))
-    builder.add(KeyboardButton(text="🛍 Заказ: доставка/самовывоз"))
-    builder.add(KeyboardButton(text="🪑 Бронь столика"))
-    builder.add(KeyboardButton(text="📱 Мини‑приложение"))
-    if include_admin:
-        builder.add(KeyboardButton(text="🛠 Админ команды"))
+    builder.add(KeyboardButton(text="📱 Открыть меню"))
     builder.adjust(1)
     return builder.as_markup(resize_keyboard=True)
 
@@ -28,7 +23,6 @@ def main_menu_kb(*, include_admin: bool = False) -> ReplyKeyboardMarkup:
 def open_webapp_kb(url: str) -> ReplyKeyboardMarkup:
     builder = ReplyKeyboardBuilder()
     builder.add(KeyboardButton(text="📱 Открыть меню", web_app=WebAppInfo(url=url)))
-    builder.add(KeyboardButton(text="❌ Отмена"))
     builder.adjust(1)
     return builder.as_markup(resize_keyboard=True)
 

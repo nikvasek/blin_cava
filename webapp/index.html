@@ -26,7 +26,28 @@
         </div>
         <div class="cart-items" id="cartItems">Пусто</div>
       </div>
-      <button class="btn" id="sendBtn" disabled>Отправить в бот</button>
+
+      <div class="checkout">
+        <div class="checkout-title">Доставка</div>
+        <label class="field">
+          <div class="field-label">Имя</div>
+          <input class="input" id="nameInput" placeholder="Например: Анна" autocomplete="name" />
+        </label>
+        <label class="field">
+          <div class="field-label">Телефон</div>
+          <input class="input" id="phoneInput" placeholder="+7..." autocomplete="tel" />
+        </label>
+        <label class="field">
+          <div class="field-label">Адрес доставки</div>
+          <input class="input" id="addressInput" placeholder="Улица, дом, кв." autocomplete="street-address" />
+        </label>
+        <label class="field">
+          <div class="field-label">Комментарий (необязательно)</div>
+          <input class="input" id="commentInput" placeholder="Например: домофон 12" />
+        </label>
+      </div>
+
+      <button class="btn" id="sendBtn" disabled>Оформить заказ</button>
     </footer>
 
     <script src="static/app.js"></script>

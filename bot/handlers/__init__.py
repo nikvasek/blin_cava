@@ -1,3 +1,3 @@
-from bot.handlers import admin, booking, common, menu, order
+from bot.handlers import common, webapp
 
-__all__ = ["admin", "booking", "common", "menu", "order"]
+__all__ = ["common", "webapp"]

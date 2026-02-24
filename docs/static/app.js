@@ -41,6 +41,10 @@ function main() {
   const cartItemsEl = document.getElementById('cartItems');
   const cartTotalEl = document.getElementById('cartTotal');
   const sendBtn = document.getElementById('sendBtn');
+  const nameInput = document.getElementById('nameInput');
+  const phoneInput = document.getElementById('phoneInput');
+  const addressInput = document.getElementById('addressInput');
+  const commentInput = document.getElementById('commentInput');
 
   const cart = new Map(); // key -> {category,title,price,qty}
   let currentCategory = null;
@@ -58,7 +62,29 @@ function main() {
     const total = entries.reduce((s, x) => s + x.price * x.qty, 0);
     cartTotalEl.textContent = rub(total);
     cartItemsEl.textContent = entries.map(x => `${x.title} ×${x.qty}`).join(' · ');
-    sendBtn.disabled = false;
+    sendBtn.disabled = !isFormValid();
+  }
+
+  function isFormValid() {
+    const entries = Array.from(cart.values()).filter(x => x.qty > 0);
+    if (entries.length === 0) return false;
+    const name = (nameInput?.value || '').trim();
+    const phone = (phoneInput?.value || '').trim();
+    const address = (addressInput?.value || '').trim();
+    if (name.length < 2) return false;
+    if (phone.length < 6) return false;
+    if (address.length < 6) return false;
+    return true;
+  }
+
+  function wireValidation() {
+    const onChange = () => {
+      sendBtn.disabled = !isFormValid();
+    };
+    nameInput?.addEventListener('input', onChange);
+    phoneInput?.addEventListener('input', onChange);
+    addressInput?.addEventListener('input', onChange);
+    commentInput?.addEventListener('input', onChange);
   }
 
   function setQty(category, item, qty) {
@@ -146,7 +172,16 @@ function main() {
 
     if (items.length === 0) return;
 
-    const payload = JSON.stringify({ items });
+    const name = (nameInput?.value || '').trim();
+    const phone = (phoneInput?.value || '').trim();
+    const address = (addressInput?.value || '').trim();
+    const comment = (commentInput?.value || '').trim();
+
+    if (name.length < 2 || phone.length < 6 || address.length < 6) {
+      return;
+    }
+
+    const payload = JSON.stringify({ name, phone, address, comment, items });
 
     if (tg) {
       tg.sendData(payload);
@@ -163,6 +198,7 @@ function main() {
       renderTabs();
       renderList();
       renderCart();
+      wireValidation();
     })
     .catch(() => {
       document.getElementById('subtitle').textContent = 'Не удалось загрузить меню';
