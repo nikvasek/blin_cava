@@ -47,6 +47,10 @@ async def webapp_checkout(message: Message, config: Config) -> None:
         await message.answer("Неверный формат данных из мини‑приложения.")
         return
 
+    order_type = _clean_text(payload.get("order_type"), max_len=16) or "delivery"
+    if order_type not in {"delivery", "pickup"}:
+        order_type = "delivery"
+
     name = _clean_text(payload.get("name"), max_len=64)
     phone = _clean_text(payload.get("phone"), max_len=32)
     address = _clean_text(payload.get("address"), max_len=256)
@@ -58,7 +62,7 @@ async def webapp_checkout(message: Message, config: Config) -> None:
     if len(phone) < 6:
         await message.answer("Не понял телефон. Вернитесь в мини‑приложение и заполните телефон.")
         return
-    if len(address) < 6:
+    if order_type == "delivery" and len(address) < 6:
         await message.answer("Не понял адрес. Вернитесь в мини‑приложение и заполните адрес доставки.")
         return
 
@@ -130,20 +134,21 @@ async def webapp_checkout(message: Message, config: Config) -> None:
     order_id = await create_order(
         config.db_path,
         user_id=message.from_user.id if message.from_user else 0,
-        order_type="delivery",
+        order_type=order_type,
         scheduled_for=None,
         name=name,
         phone=phone,
-        address=address,
+        address=address if order_type == "delivery" else None,
         comment=comment,
         items=items,
     )
 
     text = (
         f"✅ Заказ оформлен. Номер: {order_id}\n\n"
-        f"Доставка: {address}\n"
-        f"Имя: {name}\n"
-        f"Тел: {phone}\n\n"
+        f"Тип: {order_type}\n"
+        + (f"Доставка: {address}\n" if order_type == "delivery" else "")
+        + f"Имя: {name}\n"
+        + f"Тел: {phone}\n\n"
         + "\n".join(human_lines)
         + f"\n\nИтого: {format_price(total_cents)}"
     )
@@ -157,10 +162,11 @@ async def webapp_checkout(message: Message, config: Config) -> None:
     if admin_targets:
         admin_text = (
             f"🆕 Новый заказ #{order_id}\n"
-            f"Тип: delivery\n"
+            f"Тип: {order_type}\n"
             f"Имя: {name}\n"
             f"Тел: {phone}\n"
-            f"Адрес: {address}\n\n"
+            + (f"Адрес: {address}\n" if order_type == "delivery" else "")
+            + "\n"
             + "\n".join(human_lines)
             + f"\n\nИтого: {format_price(total_cents)}\n"
             + (f"Комментарий: {comment}\n" if comment else "")

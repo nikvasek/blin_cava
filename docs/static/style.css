@@ -217,6 +217,28 @@ body {
   margin-bottom: 12px;
 }
 
+.type-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 6px 0 12px;
+}
+
+.type-btn {
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.type-btn.active {
+  background: var(--btn);
+  color: var(--btnText);
+  border-color: var(--btn);
+}
+
 .order-row {
   display: grid;
   grid-template-columns: 44px 1fr auto;

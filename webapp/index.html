@@ -27,6 +27,11 @@
 
         <div class="order-list" id="orderList"></div>
 
+        <div class="type-toggle" id="typeToggle">
+          <button class="type-btn active" id="typeDelivery" type="button">Доставка</button>
+          <button class="type-btn" id="typePickup" type="button">Самовывоз</button>
+        </div>
+
         <label class="field">
           <div class="field-label">Комментарий (необязательно)</div>
           <input class="input" id="commentInput" placeholder="Пожелания, детали, например: домофон 12" />
@@ -34,7 +39,7 @@
 
         <div class="divider"></div>
 
-        <div class="checkout-title">Доставка</div>
+        <div class="checkout-title" id="addressTitle">Доставка</div>
         <label class="field">
           <div class="field-label">Имя</div>
           <input class="input" id="nameInput" placeholder="Например: Анна" autocomplete="name" />
@@ -43,7 +48,7 @@
           <div class="field-label">Телефон</div>
           <input class="input" id="phoneInput" placeholder="+7..." autocomplete="tel" />
         </label>
-        <label class="field">
+        <label class="field" id="addressField">
           <div class="field-label">Адрес доставки</div>
           <input class="input" id="addressInput" placeholder="Улица, дом, кв." autocomplete="street-address" />
         </label>

@@ -146,6 +146,10 @@ function main() {
   const viewOrderBtn = document.getElementById('viewOrderBtn');
   const payBtn = document.getElementById('payBtn');
   const editBtn = document.getElementById('editBtn');
+  const typeDeliveryBtn = document.getElementById('typeDelivery');
+  const typePickupBtn = document.getElementById('typePickup');
+  const addressField = document.getElementById('addressField');
+  const addressTitle = document.getElementById('addressTitle');
   const nameInput = document.getElementById('nameInput');
   const phoneInput = document.getElementById('phoneInput');
   const addressInput = document.getElementById('addressInput');
@@ -155,6 +159,7 @@ function main() {
   let currentCategory = null;
   let menu = null;
   let view = 'menu'; // 'menu' | 'order'
+  let orderType = 'delivery'; // 'delivery' | 'pickup'
 
   function cartEntries() {
     return Array.from(cart.values()).filter(x => x.qty > 0);
@@ -207,11 +212,23 @@ function main() {
     if (!hasItems()) return false;
     const name = (nameInput?.value || '').trim();
     const phone = (phoneInput?.value || '').trim();
-    const address = (addressInput?.value || '').trim();
     if (name.length < 2) return false;
     if (phone.length < 6) return false;
-    if (address.length < 6) return false;
+    if (orderType === 'delivery') {
+      const address = (addressInput?.value || '').trim();
+      if (address.length < 6) return false;
+    }
     return true;
+  }
+
+  function setOrderType(next) {
+    orderType = next;
+    const isDelivery = orderType === 'delivery';
+    if (typeDeliveryBtn) typeDeliveryBtn.classList.toggle('active', isDelivery);
+    if (typePickupBtn) typePickupBtn.classList.toggle('active', !isDelivery);
+    if (addressField) addressField.classList.toggle('hidden', !isDelivery);
+    if (addressTitle) addressTitle.textContent = isDelivery ? 'Доставка' : 'Самовывоз';
+    updateFooter();
   }
 
   function wireValidation() {
@@ -367,6 +384,14 @@ function main() {
     setView('menu');
   });
 
+  typeDeliveryBtn?.addEventListener('click', () => {
+    setOrderType('delivery');
+  });
+
+  typePickupBtn?.addEventListener('click', () => {
+    setOrderType('pickup');
+  });
+
   payBtn?.addEventListener('click', () => {
     if (!isFormValid()) return;
 
@@ -387,7 +412,14 @@ function main() {
     const address = (addressInput?.value || '').trim();
     const comment = (commentInput?.value || '').trim();
 
-    const payload = JSON.stringify({ name, phone, address, comment, items });
+    const payload = JSON.stringify({
+      order_type: orderType,
+      name,
+      phone,
+      address: orderType === 'delivery' ? address : '',
+      comment,
+      items,
+    });
 
     if (tg) {
       tg.sendData(payload);
@@ -406,6 +438,7 @@ function main() {
       renderOrder();
       wireValidation();
       setView('menu');
+      setOrderType('delivery');
     })
     .catch((err) => {
       console.error('Failed to load menu', err);
