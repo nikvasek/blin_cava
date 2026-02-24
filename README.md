@@ -1,6 +1,6 @@
-# blin_cava — Telegram bot (MVP skeleton)
+# blin_cava — Telegram Mini App + bot receiver
 
-Minimal skeleton for a cafe Telegram bot: menu browsing, order flow (delivery/pickup), and table reservations with real table list + optional hall plan image.
+Mini App (Telegram WebApp) for cafe menu + cart + delivery checkout. The Telegram bot is a thin shell: it opens the Mini App and receives completed orders via `web_app_data`, then stores them in SQLite.
 
 ## Quick start (macOS)
 
@@ -18,7 +18,14 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Open `.env` and set `BOT_TOKEN`.
+Open `.env` and set:
+
+- `BOT_TOKEN`
+- `WEBAPP_URL` (must be **https**, e.g. GitHub Pages URL)
+
+Optional:
+
+- `ADMIN_CHAT_ID` — if set, the bot notifies this chat about new orders.
 
 3) Run:
 
@@ -30,8 +37,6 @@ python main.py
 
 - SQLite DB file: `data/cafe.db`
 - Backup script: `scripts/backup_db.sh`
-
-Put your hall plan image (PNG/JPG) into `assets/hall_plan.png` (optional). If the file is missing, the bot will still work.
 
 ## Apply menu from reference
 
@@ -45,15 +50,15 @@ It deactivates previous menu items (keeps them in DB for historical orders) and 
 
 ## Telegram Mini App (WebApp)
 
-This repo includes a minimal WebApp in `webapp/` (menu + cart + "Send to bot").
+This repo includes a minimal WebApp in `webapp/` (menu → cart → delivery → send to bot).
 
 1) Host `webapp/` somewhere with **HTTPS** (required by Telegram WebApps).
 	- Free options: GitHub Pages / Netlify / Vercel.
 	- For local dev: use a tunnel (ngrok / Cloudflare Tunnel) to get an https URL.
 
-2) Put the public URL to `webapp/index.html` into `.env` as `WEBAPP_URL` and restart the bot.
+2) Put the public URL into `.env` as `WEBAPP_URL` and restart the bot.
 
-3) In Telegram, press **📱 Мини‑приложение** or run `/app`.
+3) In Telegram, run `/start` or `/app`.
 
 ### GitHub Pages (free) quick start
 
@@ -71,17 +76,4 @@ Then set in `.env`:
 
 and restart the bot.
 
-## Admin: edit menu prices
 
-1) Put your Telegram user id into `.env` as `ADMIN_USER_IDS` (comma-separated).
-2) In Telegram send `/admin` to the bot.
-3) Select a menu item → **✏️ Изменить цену** → send a number like `930`.
-
-## Admin: view orders and bookings
-
-- `/orders` — shows last 20 orders, opens details, lets you change order status.
-- `/bookings` — shows last 20 table reservations, opens details, lets you change reservation status.
-
-## Admin: command list
-
-- `/admin_help` — prints all bot commands with short explanations (also available as a keyboard button **🛠 Админ команды** for admins).
