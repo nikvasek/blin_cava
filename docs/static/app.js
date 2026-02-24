@@ -2,6 +2,9 @@
 
 const tg = window.Telegram?.WebApp;
 
+const SHEET_CSV_URL =
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vRKkNaFq35qpbgc5eI__DJwKFSn3iIZIld1xHIyEBol4DPqTOQz4E5ofZER07gaHU27ngCrKAToU-Cl/pub?gid=1187582404&single=true&output=csv';
+
 function rub(n) {
   return `${n} ₽`;
 }
@@ -10,12 +13,99 @@ function keyOf(category, title) {
   return `${category}||${title}`;
 }
 
+function parseCsvRow(row) {
+  const cells = [];
+  let cur = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < row.length; i += 1) {
+    const ch = row[i];
+    if (ch === '"') {
+      if (inQuotes && row[i + 1] === '"') {
+        cur += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (ch === ',' && !inQuotes) {
+      cells.push(cur);
+      cur = '';
+      continue;
+    }
+
+    cur += ch;
+  }
+
+  cells.push(cur);
+  return cells.map(c => c.trim());
+}
+
+function parseCsv(text) {
+  const lines = text
+    .replace(/\r/g, '')
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean);
+  if (lines.length === 0) return [];
+
+  const header = parseCsvRow(lines[0]);
+  const rows = [];
+  for (let i = 1; i < lines.length; i += 1) {
+    const values = parseCsvRow(lines[i]);
+    const row = {};
+    for (let j = 0; j < header.length; j += 1) {
+      row[header[j]] = values[j] ?? '';
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
+function rowsToMenu(rows) {
+  const byCat = new Map();
+
+  for (const r of rows) {
+    const category = String(r.category || '').trim();
+    const title = String(r.title || '').trim();
+    const description = String(r.description || '').trim();
+    const image = String(r.image || '').trim();
+    const isActiveRaw = String(r.is_active || '1').trim().toLowerCase();
+
+    if (!category || !title) continue;
+    if (['0', 'false', 'no'].includes(isActiveRaw)) continue;
+
+    const priceRaw = String(r.price || '').replace(',', '.');
+    const price = Number(priceRaw);
+    if (!Number.isFinite(price)) continue;
+
+    if (!byCat.has(category)) byCat.set(category, []);
+    byCat.get(category).push({
+      title,
+      description,
+      price,
+      image,
+    });
+  }
+
+  const categories = [];
+  for (const [name, items] of byCat.entries()) {
+    categories.push({ name, items });
+  }
+
+  return { categories };
+}
+
 async function loadMenu() {
-  const url = new URL('menu.json', window.location.href);
+  const url = new URL(SHEET_CSV_URL);
   url.searchParams.set('v', String(Date.now()));
   const res = await fetch(url.toString());
-  if (!res.ok) throw new Error('menu.json not found');
-  return await res.json();
+  if (!res.ok) throw new Error('sheet csv not доступен');
+  const text = await res.text();
+  const rows = parseCsv(text);
+  return rowsToMenu(rows);
 }
 
 function createEl(tag, className, text) {
@@ -136,7 +226,13 @@ function main() {
 
   function setQty(category, item, qty) {
     const k = keyOf(category.name, item.title);
-    const prev = cart.get(k) || { category: category.name, title: item.title, price: item.price, qty: 0 };
+    const prev = cart.get(k) || {
+      category: category.name,
+      title: item.title,
+      price: item.price,
+      qty: 0,
+      image: item.image || '',
+    };
     prev.qty = Math.max(0, qty);
     cart.set(k, prev);
     renderMenu();
@@ -159,8 +255,16 @@ function main() {
 
       const tile = createEl('div', 'tile');
       const top = createEl('div', 'tile-top');
-      const emoji = createEl('div', 'tile-emoji', emojiFor(category.name));
-      top.appendChild(emoji);
+      if (item.image) {
+        const img = createEl('img', 'tile-img');
+        img.alt = item.title;
+        img.loading = 'lazy';
+        img.src = item.image;
+        top.appendChild(img);
+      } else {
+        const emoji = createEl('div', 'tile-emoji', emojiFor(category.name));
+        top.appendChild(emoji);
+      }
 
       if (q > 0) {
         top.appendChild(createEl('div', 'badge', String(q)));
@@ -215,7 +319,17 @@ function main() {
 
     for (const x of entries) {
       const row = createEl('div', 'order-row');
-      row.appendChild(createEl('div', 'order-emoji', emojiFor(x.category)));
+      if (x.image) {
+        const media = createEl('div', 'order-emoji');
+        const img = createEl('img', 'order-img');
+        img.alt = x.title;
+        img.loading = 'lazy';
+        img.src = x.image;
+        media.appendChild(img);
+        row.appendChild(media);
+      } else {
+        row.appendChild(createEl('div', 'order-emoji', emojiFor(x.category)));
+      }
 
       const center = createEl('div');
       center.appendChild(createEl('div', 'order-name', `${x.title} ×${x.qty}`));
