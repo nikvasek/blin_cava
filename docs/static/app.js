@@ -232,6 +232,7 @@ function main() {
       price: item.price,
       qty: 0,
       image: item.image || '',
+      description: item.description || '',
     };
     prev.qty = Math.max(0, qty);
     cart.set(k, prev);
@@ -371,7 +372,13 @@ function main() {
 
     const items = Array.from(cart.values())
       .filter(x => x.qty > 0)
-      .map(x => ({ category: x.category, title: x.title, qty: x.qty }));
+      .map(x => ({
+        category: x.category,
+        title: x.title,
+        description: x.description || '',
+        price: x.price,
+        qty: x.qty,
+      }));
 
     if (items.length === 0) return;
 

@@ -7,7 +7,7 @@ from aiogram import F, Router
 from aiogram.types import Message
 
 from bot.config import Config
-from bot.db import create_order, fetch_menu_item_by_category_title
+from bot.db import create_order, fetch_menu_item_by_category_title, upsert_menu_item
 from bot.keyboards import open_webapp_kb
 from bot.utils import format_price
 
@@ -20,6 +20,14 @@ def _clean_text(v: Any, *, max_len: int) -> str:
     if len(s) > max_len:
         s = s[:max_len]
     return s
+
+
+def _admin_targets(config: Config) -> set[int]:
+    targets: set[int] = set()
+    if config.admin_chat_id is not None:
+        targets.add(int(config.admin_chat_id))
+    targets.update(int(x) for x in config.admin_user_ids)
+    return targets
 
 
 @router.message(F.web_app_data)
@@ -69,12 +77,20 @@ async def webapp_checkout(message: Message, config: Config) -> None:
 
         category = _clean_text(it.get("category"), max_len=64)
         title = _clean_text(it.get("title"), max_len=128)
+        description = _clean_text(it.get("description"), max_len=512)
         try:
             qty = int(it.get("qty", 0))
         except (TypeError, ValueError):
             qty = 0
+        price_raw = it.get("price")
+        try:
+            price_rub = float(price_raw)
+        except (TypeError, ValueError):
+            price_rub = 0.0
 
-        if not category or not title or qty <= 0 or qty > 100:
+        price_cents = int(round(price_rub * 100))
+
+        if not category or not title or qty <= 0 or qty > 100 or price_cents <= 0:
             continue
 
         menu_item = await fetch_menu_item_by_category_title(
@@ -82,8 +98,14 @@ async def webapp_checkout(message: Message, config: Config) -> None:
             category=category,
             title=title,
         )
-        if not menu_item:
-            continue
+        if not menu_item or int(menu_item.price_cents) != int(price_cents):
+            menu_item = await upsert_menu_item(
+                config.db_path,
+                category=category,
+                title=title,
+                description=description,
+                price_cents=price_cents,
+            )
 
         items.append(
             {
@@ -131,7 +153,8 @@ async def webapp_checkout(message: Message, config: Config) -> None:
         reply_markup=open_webapp_kb(config.webapp_url) if config.webapp_url else None,
     )
 
-    if config.admin_chat_id:
+    admin_targets = _admin_targets(config)
+    if admin_targets:
         admin_text = (
             f"🆕 Новый заказ #{order_id}\n"
             f"Тип: delivery\n"
@@ -142,7 +165,8 @@ async def webapp_checkout(message: Message, config: Config) -> None:
             + f"\n\nИтого: {format_price(total_cents)}\n"
             + (f"Комментарий: {comment}\n" if comment else "")
         )
-        try:
-            await message.bot.send_message(config.admin_chat_id, admin_text)
-        except Exception:
-            pass
+        for chat_id in admin_targets:
+            try:
+                await message.bot.send_message(chat_id, admin_text)
+            except Exception:
+                continue

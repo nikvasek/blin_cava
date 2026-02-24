@@ -285,6 +285,58 @@ async def update_menu_item_price(db_path: str, item_id: int, price_cents: int) -
         await db.commit()
 
 
+async def upsert_menu_item(
+    db_path: str,
+    *,
+    category: str,
+    title: str,
+    description: str,
+    price_cents: int,
+) -> MenuItem:
+    async with aiosqlite.connect(db_path) as db:
+        cur = await db.execute(
+            "SELECT id FROM menu_item WHERE category = ? AND title = ? LIMIT 1",
+            (category, title),
+        )
+        row = await cur.fetchone()
+        await cur.close()
+
+        if row:
+            (item_id,) = row
+            await db.execute(
+                """
+                UPDATE menu_item
+                SET description = ?, price_cents = ?, is_active = 1
+                WHERE id = ?
+                """,
+                (description, int(price_cents), int(item_id)),
+            )
+        else:
+            cur = await db.execute(
+                """
+                INSERT INTO menu_item(category, title, description, price_cents, is_active)
+                VALUES (?, ?, ?, ?, 1)
+                """,
+                (category, title, description, int(price_cents)),
+            )
+            item_id = cur.lastrowid
+            await cur.close()
+
+        await db.commit()
+
+        cur = await db.execute(
+            """
+            SELECT id, category, title, description, price_cents, is_active
+            FROM menu_item
+            WHERE id = ?
+            """,
+            (int(item_id),),
+        )
+        row = await cur.fetchone()
+        await cur.close()
+    return MenuItem(*row)
+
+
 async def fetch_menu_item_by_category_title(
     db_path: str,
     *,
