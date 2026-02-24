@@ -41,6 +41,7 @@ function main() {
   const cartItemsEl = document.getElementById('cartItems');
   const cartTotalEl = document.getElementById('cartTotal');
   const sendBtn = document.getElementById('sendBtn');
+  const checkoutEl = document.getElementById('checkout');
   const nameInput = document.getElementById('nameInput');
   const phoneInput = document.getElementById('phoneInput');
   const addressInput = document.getElementById('addressInput');
@@ -49,25 +50,30 @@ function main() {
   const cart = new Map(); // key -> {category,title,price,qty}
   let currentCategory = null;
   let menu = null;
+  let step = 'cart'; // 'cart' | 'delivery'
+
+  function cartEntries() {
+    return Array.from(cart.values()).filter(x => x.qty > 0);
+  }
 
   function renderCart() {
-    const entries = Array.from(cart.values()).filter(x => x.qty > 0);
+    const entries = cartEntries();
     if (entries.length === 0) {
+      step = 'cart';
       cartItemsEl.textContent = 'Пусто';
       cartTotalEl.textContent = rub(0);
-      sendBtn.disabled = true;
+      updateStepUI();
       return;
     }
 
     const total = entries.reduce((s, x) => s + x.price * x.qty, 0);
     cartTotalEl.textContent = rub(total);
     cartItemsEl.textContent = entries.map(x => `${x.title} ×${x.qty}`).join(' · ');
-    sendBtn.disabled = !isFormValid();
+    updateStepUI();
   }
 
   function isFormValid() {
-    const entries = Array.from(cart.values()).filter(x => x.qty > 0);
-    if (entries.length === 0) return false;
+    if (cartEntries().length === 0) return false;
     const name = (nameInput?.value || '').trim();
     const phone = (phoneInput?.value || '').trim();
     const address = (addressInput?.value || '').trim();
@@ -77,9 +83,23 @@ function main() {
     return true;
   }
 
+  function updateStepUI() {
+    const hasItems = cartEntries().length > 0;
+    if (step === 'cart') {
+      checkoutEl?.classList.add('hidden');
+      sendBtn.textContent = 'Далее к доставке';
+      sendBtn.disabled = !hasItems;
+      return;
+    }
+
+    checkoutEl?.classList.remove('hidden');
+    sendBtn.textContent = 'Оформить заказ';
+    sendBtn.disabled = !isFormValid();
+  }
+
   function wireValidation() {
     const onChange = () => {
-      sendBtn.disabled = !isFormValid();
+      updateStepUI();
     };
     nameInput?.addEventListener('input', onChange);
     phoneInput?.addEventListener('input', onChange);
@@ -166,6 +186,14 @@ function main() {
   }
 
   sendBtn.addEventListener('click', () => {
+    if (step === 'cart') {
+      if (cartEntries().length === 0) return;
+      step = 'delivery';
+      updateStepUI();
+      nameInput?.focus();
+      return;
+    }
+
     const items = Array.from(cart.values())
       .filter(x => x.qty > 0)
       .map(x => ({ category: x.category, title: x.title, qty: x.qty }));

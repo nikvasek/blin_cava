@@ -60,6 +60,11 @@ async def webapp_cart(message: Message, state: FSMContext, config: Config) -> No
         await message.answer("Корзина пуста.")
         return
 
+    name = str(payload.get("name", "")).strip() if isinstance(payload, dict) else ""
+    phone = str(payload.get("phone", "")).strip() if isinstance(payload, dict) else ""
+    address = str(payload.get("address", "")).strip() if isinstance(payload, dict) else ""
+    comment = str(payload.get("comment", "")).strip() if isinstance(payload, dict) else ""
+
     cart: dict[str, int] = {}
     for it in items:
         if not isinstance(it, dict):
@@ -90,6 +95,68 @@ async def webapp_cart(message: Message, state: FSMContext, config: Config) -> No
         )
         return
 
+    # If the mini app provided delivery form fields, finalize order immediately.
+    if name and phone and address:
+        db_items: list[dict[str, Any]] = []
+        for item_id_str, qty in cart.items():
+            mi = await fetch_menu_item(config.db_path, int(item_id_str))
+            if not mi:
+                continue
+            db_items.append(
+                {
+                    "menu_item_id": int(mi.id),
+                    "qty": int(qty),
+                    "price_cents": int(mi.price_cents),
+                }
+            )
+
+        if not db_items:
+            await message.answer("Корзина пуста.")
+            return
+
+        await state.clear()
+
+        order_id = await create_order(
+            config.db_path,
+            user_id=message.from_user.id,
+            order_type="delivery",
+            scheduled_for=None,
+            name=name,
+            phone=phone,
+            address=address,
+            comment=comment,
+            items=db_items,
+        )
+
+        include_admin = is_admin_user(
+            config,
+            user_id=message.from_user.id if message.from_user else None,
+            chat_id=message.chat.id,
+        )
+        await message.answer(
+            f"✅ Заказ оформлен. Номер: {order_id}",
+            reply_markup=main_menu_kb(include_admin=include_admin),
+        )
+
+        if config.admin_chat_id:
+            cart_text, _ = await _render_cart(config, cart)
+            text = (
+                f"🆕 Новый заказ #{order_id}\n"
+                f"Тип: delivery\n"
+                f"Имя: {name}\n"
+                f"Тел: {phone}\n"
+                f"Адрес: {address}\n\n"
+                f"{cart_text}\n\n"
+                f"Комментарий: {comment or '-'}"
+            )
+            try:
+                await message.bot.send_message(config.admin_chat_id, text)
+            except Exception:
+                pass
+
+        return
+
+    # Fallback to the old chat-based checkout flow.
     await state.clear()
     await state.update_data(cart=cart)
 
