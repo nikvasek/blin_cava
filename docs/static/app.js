@@ -25,6 +25,15 @@ function createEl(tag, className, text) {
   return el;
 }
 
+function emojiFor(categoryName) {
+  const s = String(categoryName || '').toLowerCase();
+  if (s.includes('напит')) return '🥤';
+  if (s.includes('закус')) return '🥗';
+  if (s.includes('десерт')) return '🍰';
+  if (s.includes('суп')) return '🥣';
+  return '🍽️';
+}
+
 function main() {
   if (tg) {
     tg.ready();
@@ -38,12 +47,15 @@ function main() {
     if (theme.button_text_color) document.documentElement.style.setProperty('--btnText', theme.button_text_color);
   }
 
+  const subtitleEl = document.getElementById('subtitle');
   const tabsEl = document.getElementById('tabs');
-  const listEl = document.getElementById('list');
-  const cartItemsEl = document.getElementById('cartItems');
-  const cartTotalEl = document.getElementById('cartTotal');
-  const sendBtn = document.getElementById('sendBtn');
-  const checkoutEl = document.getElementById('checkout');
+  const gridEl = document.getElementById('grid');
+  const menuViewEl = document.getElementById('menuView');
+  const orderViewEl = document.getElementById('orderView');
+  const orderListEl = document.getElementById('orderList');
+  const viewOrderBtn = document.getElementById('viewOrderBtn');
+  const payBtn = document.getElementById('payBtn');
+  const editBtn = document.getElementById('editBtn');
   const nameInput = document.getElementById('nameInput');
   const phoneInput = document.getElementById('phoneInput');
   const addressInput = document.getElementById('addressInput');
@@ -52,30 +64,57 @@ function main() {
   const cart = new Map(); // key -> {category,title,price,qty}
   let currentCategory = null;
   let menu = null;
-  let step = 'cart'; // 'cart' | 'delivery'
+  let view = 'menu'; // 'menu' | 'order'
 
   function cartEntries() {
     return Array.from(cart.values()).filter(x => x.qty > 0);
   }
 
-  function renderCart() {
-    const entries = cartEntries();
-    if (entries.length === 0) {
-      step = 'cart';
-      cartItemsEl.textContent = 'Пусто';
-      cartTotalEl.textContent = rub(0);
-      updateStepUI();
+  function cartTotal() {
+    return cartEntries().reduce((s, x) => s + x.price * x.qty, 0);
+  }
+
+  function hasItems() {
+    return cartEntries().length > 0;
+  }
+
+  function setView(next) {
+    view = next;
+    if (view === 'menu') {
+      menuViewEl?.classList.remove('hidden');
+      orderViewEl?.classList.add('hidden');
+      if (subtitleEl) subtitleEl.textContent = 'Выберите блюда и количество';
+    } else {
+      menuViewEl?.classList.add('hidden');
+      orderViewEl?.classList.remove('hidden');
+      if (subtitleEl) subtitleEl.textContent = 'Проверьте заказ и заполните доставку';
+    }
+    updateFooter();
+  }
+
+  function updateFooter() {
+    const total = cartTotal();
+    if (view === 'menu') {
+      payBtn?.classList.add('hidden');
+      if (hasItems()) {
+        viewOrderBtn?.classList.remove('hidden');
+        viewOrderBtn.textContent = `Посмотреть заказ · ${rub(total)}`;
+        viewOrderBtn.disabled = false;
+      } else {
+        viewOrderBtn?.classList.add('hidden');
+        viewOrderBtn.disabled = true;
+      }
       return;
     }
 
-    const total = entries.reduce((s, x) => s + x.price * x.qty, 0);
-    cartTotalEl.textContent = rub(total);
-    cartItemsEl.textContent = entries.map(x => `${x.title} ×${x.qty}`).join(' · ');
-    updateStepUI();
+    viewOrderBtn?.classList.add('hidden');
+    payBtn?.classList.remove('hidden');
+    payBtn.textContent = `Оформить · ${rub(total)}`;
+    payBtn.disabled = !isFormValid();
   }
 
   function isFormValid() {
-    if (cartEntries().length === 0) return false;
+    if (!hasItems()) return false;
     const name = (nameInput?.value || '').trim();
     const phone = (phoneInput?.value || '').trim();
     const address = (addressInput?.value || '').trim();
@@ -85,23 +124,9 @@ function main() {
     return true;
   }
 
-  function updateStepUI() {
-    const hasItems = cartEntries().length > 0;
-    if (step === 'cart') {
-      checkoutEl?.classList.add('hidden');
-      sendBtn.textContent = 'Далее к доставке';
-      sendBtn.disabled = !hasItems;
-      return;
-    }
-
-    checkoutEl?.classList.remove('hidden');
-    sendBtn.textContent = 'Оформить заказ';
-    sendBtn.disabled = !isFormValid();
-  }
-
   function wireValidation() {
     const onChange = () => {
-      updateStepUI();
+      updateFooter();
     };
     nameInput?.addEventListener('input', onChange);
     phoneInput?.addEventListener('input', onChange);
@@ -114,7 +139,9 @@ function main() {
     const prev = cart.get(k) || { category: category.name, title: item.title, price: item.price, qty: 0 };
     prev.qty = Math.max(0, qty);
     cart.set(k, prev);
-    renderCart();
+    renderMenu();
+    renderOrder();
+    updateFooter();
   }
 
   function qtyOf(category, item) {
@@ -122,54 +149,81 @@ function main() {
     return cart.get(k)?.qty || 0;
   }
 
-  function renderList() {
-    listEl.innerHTML = '';
+  function renderMenu() {
+    gridEl.innerHTML = '';
     const category = menu.categories.find(c => c.name === currentCategory);
     if (!category) return;
 
     for (const item of category.items) {
-      const card = createEl('div', 'card');
-      const row = createEl('div', 'row');
+      const q = qtyOf(category, item);
 
-      const left = createEl('div');
-      const title = createEl('div', 'item-title', item.title);
-      left.appendChild(title);
+      const tile = createEl('div', 'tile');
+      const top = createEl('div', 'tile-top');
+      const emoji = createEl('div', 'tile-emoji', emojiFor(category.name));
+      top.appendChild(emoji);
 
-      const price = createEl('div', 'item-price', rub(item.price));
-
-      row.appendChild(left);
-      row.appendChild(price);
-      card.appendChild(row);
-
-      if (item.description) {
-        card.appendChild(createEl('div', 'item-desc', item.description));
+      if (q > 0) {
+        top.appendChild(createEl('div', 'badge', String(q)));
       }
 
-      const controls = createEl('div', 'controls');
-      const counter = createEl('div', 'counter');
-      const dec = createEl('button', 'icon-btn', '−');
-      const qty = createEl('div', 'qty', String(qtyOf(category, item)));
-      const inc = createEl('button', 'icon-btn', '+');
+      const title = createEl('div', 'tile-title', item.title);
+      const price = createEl('div', 'tile-price', rub(item.price));
+      const actions = createEl('div', 'tile-actions');
 
-      dec.addEventListener('click', () => {
-        const next = qtyOf(category, item) - 1;
-        setQty(category, item, next);
-        qty.textContent = String(qtyOf(category, item));
-      });
+      if (q <= 0) {
+        const addBtn = createEl('button', 'add-btn', 'ADD');
+        addBtn.type = 'button';
+        addBtn.addEventListener('click', () => {
+          setQty(category, item, 1);
+        });
+        actions.appendChild(addBtn);
+      } else {
+        const pm = createEl('div', 'pm');
+        const dec = createEl('button', 'pm-btn', '−');
+        const inc = createEl('button', 'pm-btn', '+');
+        dec.type = 'button';
+        inc.type = 'button';
+        dec.addEventListener('click', () => {
+          setQty(category, item, q - 1);
+        });
+        inc.addEventListener('click', () => {
+          setQty(category, item, q + 1);
+        });
+        pm.appendChild(dec);
+        pm.appendChild(inc);
+        actions.appendChild(pm);
+      }
 
-      inc.addEventListener('click', () => {
-        const next = qtyOf(category, item) + 1;
-        setQty(category, item, next);
-        qty.textContent = String(qtyOf(category, item));
-      });
+      tile.appendChild(top);
+      tile.appendChild(title);
+      tile.appendChild(price);
+      tile.appendChild(actions);
 
-      counter.appendChild(dec);
-      counter.appendChild(qty);
-      counter.appendChild(inc);
-      controls.appendChild(counter);
-      card.appendChild(controls);
+      gridEl.appendChild(tile);
+    }
+  }
 
-      listEl.appendChild(card);
+  function renderOrder() {
+    if (!orderListEl) return;
+    orderListEl.innerHTML = '';
+
+    const entries = cartEntries();
+    if (entries.length === 0) {
+      orderListEl.appendChild(createEl('div', 'tile', 'Корзина пуста'));
+      return;
+    }
+
+    for (const x of entries) {
+      const row = createEl('div', 'order-row');
+      row.appendChild(createEl('div', 'order-emoji', emojiFor(x.category)));
+
+      const center = createEl('div');
+      center.appendChild(createEl('div', 'order-name', `${x.title} ×${x.qty}`));
+      center.appendChild(createEl('div', 'order-sub', x.category));
+      row.appendChild(center);
+
+      row.appendChild(createEl('div', 'order-price', rub(x.price * x.qty)));
+      orderListEl.appendChild(row);
     }
   }
 
@@ -181,20 +235,25 @@ function main() {
       btn.addEventListener('click', () => {
         currentCategory = c.name;
         renderTabs();
-        renderList();
+        renderMenu();
       });
       tabsEl.appendChild(btn);
     }
   }
 
-  sendBtn.addEventListener('click', () => {
-    if (step === 'cart') {
-      if (cartEntries().length === 0) return;
-      step = 'delivery';
-      updateStepUI();
-      nameInput?.focus();
-      return;
-    }
+  viewOrderBtn?.addEventListener('click', () => {
+    if (!hasItems()) return;
+    renderOrder();
+    setView('order');
+    nameInput?.focus();
+  });
+
+  editBtn?.addEventListener('click', () => {
+    setView('menu');
+  });
+
+  payBtn?.addEventListener('click', () => {
+    if (!isFormValid()) return;
 
     const items = Array.from(cart.values())
       .filter(x => x.qty > 0)
@@ -206,10 +265,6 @@ function main() {
     const phone = (phoneInput?.value || '').trim();
     const address = (addressInput?.value || '').trim();
     const comment = (commentInput?.value || '').trim();
-
-    if (name.length < 2 || phone.length < 6 || address.length < 6) {
-      return;
-    }
 
     const payload = JSON.stringify({ name, phone, address, comment, items });
 
@@ -226,9 +281,10 @@ function main() {
       menu = m;
       currentCategory = menu.categories[0]?.name || null;
       renderTabs();
-      renderList();
-      renderCart();
+      renderMenu();
+      renderOrder();
       wireValidation();
+      setView('menu');
     })
     .catch((err) => {
       console.error('Failed to load menu', err);

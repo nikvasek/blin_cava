@@ -40,6 +40,11 @@ def load_config() -> Config:
     db_path = os.getenv("DB_PATH", "data/cafe.db").strip()
     hall_plan_path = os.getenv("HALL_PLAN_PATH", "assets/hall_plan.png").strip()
     webapp_url = os.getenv("WEBAPP_URL", "").strip() or None
+    if webapp_url and not webapp_url.startswith("https://"):
+        raise RuntimeError(
+            "WEBAPP_URL must start with https:// (Telegram WebApps require HTTPS). "
+            "For local dev, use a tunnel like ngrok/Cloudflare Tunnel."
+        )
 
     Path(db_path).parent.mkdir(parents=True, exist_ok=True)
     return Config(

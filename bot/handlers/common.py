@@ -46,3 +46,18 @@ async def open_app(message: Message, config: Config) -> None:
         "Откройте мини‑приложение меню:",
         reply_markup=open_webapp_kb(config.webapp_url),
     )
+
+
+@router.message(F.text == "📱 Открыть меню")
+async def open_app_text(message: Message, config: Config) -> None:
+    # In some clients a user may type the caption, or an old keyboard button may send text.
+    if not config.webapp_url:
+        await message.answer(
+            "Мини‑приложение пока не настроено.\n"
+            "Укажите WEBAPP_URL (https) в .env и перезапустите бота."
+        )
+        return
+    await message.answer(
+        "Откройте мини‑приложение меню:",
+        reply_markup=open_webapp_kb(config.webapp_url),
+    )

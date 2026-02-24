@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Меню</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel="stylesheet" href="static/style.css" />
+    <link rel="stylesheet" href="static/style.css?v=20260224-1" />
   </head>
   <body>
     <header class="header">
@@ -15,19 +15,25 @@
 
     <main class="main">
       <div class="tabs" id="tabs"></div>
-      <div class="list" id="list"></div>
-    </main>
+      <section id="menuView">
+        <div class="grid" id="grid"></div>
+      </section>
 
-    <footer class="footer">
-      <div class="cart">
-        <div class="cart-line">
-          <div class="cart-title">Корзина</div>
-          <div class="cart-total" id="cartTotal">0 ₽</div>
+      <section class="hidden" id="orderView">
+        <div class="order-header">
+          <div class="order-title">Ваш заказ</div>
+          <button class="link-btn" id="editBtn" type="button">Изменить</button>
         </div>
-        <div class="cart-items" id="cartItems">Пусто</div>
-      </div>
 
-      <div class="checkout hidden" id="checkout">
+        <div class="order-list" id="orderList"></div>
+
+        <label class="field">
+          <div class="field-label">Комментарий (необязательно)</div>
+          <input class="input" id="commentInput" placeholder="Пожелания, детали, например: домофон 12" />
+        </label>
+
+        <div class="divider"></div>
+
         <div class="checkout-title">Доставка</div>
         <label class="field">
           <div class="field-label">Имя</div>
@@ -41,15 +47,14 @@
           <div class="field-label">Адрес доставки</div>
           <input class="input" id="addressInput" placeholder="Улица, дом, кв." autocomplete="street-address" />
         </label>
-        <label class="field">
-          <div class="field-label">Комментарий (необязательно)</div>
-          <input class="input" id="commentInput" placeholder="Например: домофон 12" />
-        </label>
-      </div>
+      </section>
+    </main>
 
-      <button class="btn" id="sendBtn" disabled>Далее к доставке</button>
+    <footer class="footer">
+      <button class="btn hidden" id="viewOrderBtn" type="button">Посмотреть заказ</button>
+      <button class="btn hidden" id="payBtn" type="button">Оформить</button>
     </footer>
 
-    <script src="static/app.js"></script>
+    <script src="static/app.js?v=20260224-1"></script>
   </body>
 </html>

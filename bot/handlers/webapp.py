@@ -126,7 +126,10 @@ async def webapp_checkout(message: Message, config: Config) -> None:
         + f"\n\nИтого: {format_price(total_cents)}"
     )
 
-    await message.answer(text)
+    await message.answer(
+        text,
+        reply_markup=open_webapp_kb(config.webapp_url) if config.webapp_url else None,
+    )
 
     if config.admin_chat_id:
         admin_text = (
