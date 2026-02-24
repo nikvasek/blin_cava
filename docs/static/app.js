@@ -150,6 +150,7 @@ function main() {
   const typePickupBtn = document.getElementById('typePickup');
   const addressField = document.getElementById('addressField');
   const addressTitle = document.getElementById('addressTitle');
+  const addressLabel = document.getElementById('addressLabel');
   const nameInput = document.getElementById('nameInput');
   const phoneInput = document.getElementById('phoneInput');
   const addressInput = document.getElementById('addressInput');
@@ -217,6 +218,9 @@ function main() {
     if (orderType === 'delivery') {
       const address = (addressInput?.value || '').trim();
       if (address.length < 6) return false;
+    } else {
+      const pickupTime = (addressInput?.value || '').trim();
+      if (pickupTime.length < 2) return false;
     }
     return true;
   }
@@ -226,8 +230,13 @@ function main() {
     const isDelivery = orderType === 'delivery';
     if (typeDeliveryBtn) typeDeliveryBtn.classList.toggle('active', isDelivery);
     if (typePickupBtn) typePickupBtn.classList.toggle('active', !isDelivery);
-    if (addressField) addressField.classList.toggle('hidden', !isDelivery);
+    if (addressField) addressField.classList.toggle('hidden', false);
     if (addressTitle) addressTitle.textContent = isDelivery ? 'Доставка' : 'Самовывоз';
+    if (addressLabel) addressLabel.textContent = isDelivery ? 'Адрес доставки' : 'Время самовывоза';
+    if (addressInput) {
+      addressInput.placeholder = isDelivery ? 'Улица, дом, кв.' : 'Например: 18:30';
+      addressInput.autocomplete = isDelivery ? 'street-address' : 'off';
+    }
     updateFooter();
   }
 
@@ -417,6 +426,7 @@ function main() {
       name,
       phone,
       address: orderType === 'delivery' ? address : '',
+      pickup_time: orderType === 'pickup' ? address : '',
       comment,
       items,
     });

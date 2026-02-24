@@ -54,6 +54,7 @@ async def webapp_checkout(message: Message, config: Config) -> None:
     name = _clean_text(payload.get("name"), max_len=64)
     phone = _clean_text(payload.get("phone"), max_len=32)
     address = _clean_text(payload.get("address"), max_len=256)
+    pickup_time = _clean_text(payload.get("pickup_time"), max_len=32)
     comment = _clean_text(payload.get("comment"), max_len=512)
 
     if len(name) < 2:
@@ -64,6 +65,9 @@ async def webapp_checkout(message: Message, config: Config) -> None:
         return
     if order_type == "delivery" and len(address) < 6:
         await message.answer("Не понял адрес. Вернитесь в мини‑приложение и заполните адрес доставки.")
+        return
+    if order_type == "pickup" and len(pickup_time) < 2:
+        await message.answer("Не понял время самовывоза. Вернитесь в мини‑приложение и заполните время.")
         return
 
     items_raw = payload.get("items")
@@ -147,6 +151,7 @@ async def webapp_checkout(message: Message, config: Config) -> None:
         f"✅ Заказ оформлен. Номер: {order_id}\n\n"
         f"Тип: {order_type}\n"
         + (f"Доставка: {address}\n" if order_type == "delivery" else "")
+        + (f"Самовывоз: {pickup_time}\n" if order_type == "pickup" else "")
         + f"Имя: {name}\n"
         + f"Тел: {phone}\n\n"
         + "\n".join(human_lines)
@@ -166,6 +171,7 @@ async def webapp_checkout(message: Message, config: Config) -> None:
             f"Имя: {name}\n"
             f"Тел: {phone}\n"
             + (f"Адрес: {address}\n" if order_type == "delivery" else "")
+            + (f"Время самовывоза: {pickup_time}\n" if order_type == "pickup" else "")
             + "\n"
             + "\n".join(human_lines)
             + f"\n\nИтого: {format_price(total_cents)}\n"
