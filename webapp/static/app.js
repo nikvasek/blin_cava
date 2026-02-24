@@ -11,7 +11,7 @@ function keyOf(category, title) {
 }
 
 async function loadMenu() {
-  const res = await fetch('../menu.json', { cache: 'no-store' });
+  const res = await fetch('menu.json', { cache: 'no-store' });
   if (!res.ok) throw new Error('menu.json not found');
   return await res.json();
 }
