@@ -271,6 +271,7 @@ function main() {
       addressInput.autocomplete = isDelivery ? 'street-address' : 'off';
     }
     if (deliveryTimeField) deliveryTimeField.classList.toggle('hidden', !isDelivery);
+    if (!isDelivery && deliveryTimeInput) deliveryTimeInput.value = '';
     updateFooter();
   }
 

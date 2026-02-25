@@ -1,0 +1,7 @@
+git add webapp/static/app.js docs/static/app.js
+git commit -m "Fix CSV parsing for multiline descriptions"
+git push
+
+git add webapp/static/app.js docs/static/app.js
+git commit -m "Hide delivery time for pickup"
+git push
