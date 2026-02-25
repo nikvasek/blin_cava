@@ -44,17 +44,45 @@ function parseCsvRow(row) {
 }
 
 function parseCsv(text) {
-  const lines = text
-    .replace(/\r/g, '')
-    .split('\n')
-    .map(l => l.trim())
-    .filter(Boolean);
-  if (lines.length === 0) return [];
+  const rowsText = [];
+  let cur = '';
+  let inQuotes = false;
 
-  const header = parseCsvRow(lines[0]);
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    const next = text[i + 1];
+
+    if (ch === '\r') {
+      continue;
+    }
+
+    if (ch === '"') {
+      if (inQuotes && next === '"') {
+        cur += '"';
+        i += 1;
+        continue;
+      }
+      inQuotes = !inQuotes;
+      cur += ch;
+      continue;
+    }
+
+    if (ch === '\n' && !inQuotes) {
+      if (cur.trim()) rowsText.push(cur);
+      cur = '';
+      continue;
+    }
+
+    cur += ch;
+  }
+
+  if (cur.trim()) rowsText.push(cur);
+  if (rowsText.length === 0) return [];
+
+  const header = parseCsvRow(rowsText[0]);
   const rows = [];
-  for (let i = 1; i < lines.length; i += 1) {
-    const values = parseCsvRow(lines[i]);
+  for (let i = 1; i < rowsText.length; i += 1) {
+    const values = parseCsvRow(rowsText[i]);
     const row = {};
     for (let j = 0; j < header.length; j += 1) {
       row[header[j]] = values[j] ?? '';
