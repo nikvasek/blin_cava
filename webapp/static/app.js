@@ -270,7 +270,10 @@ function main() {
       addressInput.placeholder = isDelivery ? 'Улица, дом, кв.' : 'Например: 18:30';
       addressInput.autocomplete = isDelivery ? 'street-address' : 'off';
     }
-    if (deliveryTimeField) deliveryTimeField.classList.toggle('hidden', !isDelivery);
+    if (deliveryTimeField) {
+      deliveryTimeField.classList.toggle('hidden', !isDelivery);
+      deliveryTimeField.style.display = isDelivery ? '' : 'none';
+    }
     if (!isDelivery && deliveryTimeInput) deliveryTimeInput.value = '';
     updateFooter();
   }
