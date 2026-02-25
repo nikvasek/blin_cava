@@ -16,6 +16,10 @@
   display: none;
 }
 
+html[data-order-type="pickup"] #deliveryTimeField {
+  display: none !important;
+}
+
 body {
   margin: 0;
   font-family: 'Manrope', 'Segoe UI', Arial, sans-serif;

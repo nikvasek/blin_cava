@@ -261,6 +261,7 @@ function main() {
   function setOrderType(next) {
     orderType = next;
     const isDelivery = orderType === 'delivery';
+    document.documentElement.dataset.orderType = orderType;
     if (typeDeliveryBtn) typeDeliveryBtn.classList.toggle('active', isDelivery);
     if (typePickupBtn) typePickupBtn.classList.toggle('active', !isDelivery);
     if (addressField) addressField.classList.toggle('hidden', false);
@@ -270,7 +271,15 @@ function main() {
       addressInput.placeholder = isDelivery ? 'Улица, дом, кв.' : 'Например: 18:30';
       addressInput.autocomplete = isDelivery ? 'street-address' : 'off';
     }
-    if (deliveryTimeField) deliveryTimeField.classList.toggle('hidden', !isDelivery);
+    if (deliveryTimeField) {
+      deliveryTimeField.classList.toggle('hidden', !isDelivery);
+      deliveryTimeField.toggleAttribute('hidden', !isDelivery);
+      if (isDelivery) {
+        deliveryTimeField.style.removeProperty('display');
+      } else {
+        deliveryTimeField.style.setProperty('display', 'none', 'important');
+      }
+    }
     if (!isDelivery && deliveryTimeInput) deliveryTimeInput.value = '';
     updateFooter();
   }

@@ -261,6 +261,7 @@ function main() {
   function setOrderType(next) {
     orderType = next;
     const isDelivery = orderType === 'delivery';
+    document.documentElement.dataset.orderType = orderType;
     if (typeDeliveryBtn) typeDeliveryBtn.classList.toggle('active', isDelivery);
     if (typePickupBtn) typePickupBtn.classList.toggle('active', !isDelivery);
     if (addressField) addressField.classList.toggle('hidden', false);
@@ -272,7 +273,12 @@ function main() {
     }
     if (deliveryTimeField) {
       deliveryTimeField.classList.toggle('hidden', !isDelivery);
-      deliveryTimeField.style.display = isDelivery ? '' : 'none';
+      deliveryTimeField.toggleAttribute('hidden', !isDelivery);
+      if (isDelivery) {
+        deliveryTimeField.style.removeProperty('display');
+      } else {
+        deliveryTimeField.style.setProperty('display', 'none', 'important');
+      }
     }
     if (!isDelivery && deliveryTimeInput) deliveryTimeInput.value = '';
     updateFooter();
