@@ -6,7 +6,9 @@ const SHEET_CSV_URL =
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vRKkNaFq35qpbgc5eI__DJwKFSn3iIZIld1xHIyEBol4DPqTOQz4E5ofZER07gaHU27ngCrKAToU-Cl/pub?gid=1187582404&single=true&output=csv';
 
 function rub(n) {
-  return `${n} ₽`;
+  const val = Number(n);
+  if (!Number.isFinite(val)) return '0.00 Br';
+  return `${val.toFixed(2)} Br`;
 }
 
 function keyOf(category, title) {
@@ -179,6 +181,8 @@ function main() {
   const addressField = document.getElementById('addressField');
   const addressTitle = document.getElementById('addressTitle');
   const addressLabel = document.getElementById('addressLabel');
+  const deliveryTimeField = document.getElementById('deliveryTimeField');
+  const deliveryTimeInput = document.getElementById('deliveryTimeInput');
   const nameInput = document.getElementById('nameInput');
   const phoneInput = document.getElementById('phoneInput');
   const addressInput = document.getElementById('addressInput');
@@ -244,7 +248,9 @@ function main() {
     if (name.length < 2) return false;
     if (phone.length < 6) return false;
     if (orderType === 'delivery') {
+      const deliveryTime = (deliveryTimeInput?.value || '').trim();
       const address = (addressInput?.value || '').trim();
+      if (deliveryTime.length < 2) return false;
       if (address.length < 6) return false;
     } else {
       const pickupTime = (addressInput?.value || '').trim();
@@ -265,6 +271,7 @@ function main() {
       addressInput.placeholder = isDelivery ? 'Улица, дом, кв.' : 'Например: 18:30';
       addressInput.autocomplete = isDelivery ? 'street-address' : 'off';
     }
+    if (deliveryTimeField) deliveryTimeField.classList.toggle('hidden', !isDelivery);
     updateFooter();
   }
 
@@ -275,6 +282,7 @@ function main() {
     nameInput?.addEventListener('input', onChange);
     phoneInput?.addEventListener('input', onChange);
     addressInput?.addEventListener('input', onChange);
+    deliveryTimeInput?.addEventListener('input', onChange);
     commentInput?.addEventListener('input', onChange);
   }
 
@@ -452,6 +460,7 @@ function main() {
     const name = (nameInput?.value || '').trim();
     const phone = (phoneInput?.value || '').trim();
     const address = (addressInput?.value || '').trim();
+    const deliveryTime = (deliveryTimeInput?.value || '').trim();
     const comment = (commentInput?.value || '').trim();
 
     const payload = JSON.stringify({
@@ -459,6 +468,7 @@ function main() {
       name,
       phone,
       address: orderType === 'delivery' ? address : '',
+      delivery_time: orderType === 'delivery' ? deliveryTime : '',
       pickup_time: orderType === 'pickup' ? address : '',
       comment,
       items,
