@@ -308,38 +308,42 @@ function main() {
     for (const item of category.items) {
       const q = qtyOf(category, item);
 
-      const tile = createEl('div', 'tile');
-      const top = createEl('div', 'tile-top');
+      const card = createEl('div', 'menu-card');
+
+      const media = createEl('div', 'menu-media');
       if (item.image) {
-        const img = createEl('img', 'tile-img');
+        const img = createEl('img', 'menu-img');
         img.alt = item.title;
         img.loading = 'lazy';
         img.src = item.image;
-        top.appendChild(img);
+        media.appendChild(img);
       } else {
-        const emoji = createEl('div', 'tile-emoji', emojiFor(category.name));
-        top.appendChild(emoji);
+        const emoji = createEl('div', 'menu-emoji', emojiFor(category.name));
+        media.appendChild(emoji);
       }
 
-      if (q > 0) {
-        top.appendChild(createEl('div', 'badge', String(q)));
+      const body = createEl('div', 'menu-body');
+      body.appendChild(createEl('div', 'menu-name', item.title));
+      if (item.description) {
+        body.appendChild(createEl('div', 'menu-desc', item.description));
       }
 
-      const title = createEl('div', 'tile-title', item.title);
-      const price = createEl('div', 'tile-price', rub(item.price));
-      const actions = createEl('div', 'tile-actions');
+      const right = createEl('div', 'menu-right');
+      right.appendChild(createEl('div', 'price-pill', rub(item.price)));
 
+      const actions = createEl('div', 'menu-actions');
       if (q <= 0) {
-        const addBtn = createEl('button', 'add-btn', 'ADD');
+        const addBtn = createEl('button', 'add-pill', 'Добавить');
         addBtn.type = 'button';
         addBtn.addEventListener('click', () => {
           setQty(category, item, 1);
         });
         actions.appendChild(addBtn);
       } else {
-        const pm = createEl('div', 'pm');
-        const dec = createEl('button', 'pm-btn', '−');
-        const inc = createEl('button', 'pm-btn', '+');
+        const pm = createEl('div', 'qty-row');
+        const dec = createEl('button', 'qty-btn', '−');
+        const qty = createEl('div', 'qty-num', String(q));
+        const inc = createEl('button', 'qty-btn', '+');
         dec.type = 'button';
         inc.type = 'button';
         dec.addEventListener('click', () => {
@@ -349,16 +353,17 @@ function main() {
           setQty(category, item, q + 1);
         });
         pm.appendChild(dec);
+        pm.appendChild(qty);
         pm.appendChild(inc);
         actions.appendChild(pm);
       }
 
-      tile.appendChild(top);
-      tile.appendChild(title);
-      tile.appendChild(price);
-      tile.appendChild(actions);
+      right.appendChild(actions);
 
-      gridEl.appendChild(tile);
+      card.appendChild(media);
+      card.appendChild(body);
+      card.appendChild(right);
+      gridEl.appendChild(card);
     }
   }
 
