@@ -4,9 +4,12 @@ git push
 
 
 
-
+#команда комита и пуша в git:
 git add -A && git commit -m "update" && git push
 
+или
+
+git add -A && git commit -m "logo" && git push
 
 
-git add -A && git commit -m "your message" && git push
+git push   # проверка пуша

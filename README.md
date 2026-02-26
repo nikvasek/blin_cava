@@ -2,13 +2,31 @@
 
 Mini App (Telegram WebApp) for cafe menu + cart + delivery checkout. The Telegram bot is a thin shell: it opens the Mini App and receives completed orders via `web_app_data`, then stores them in SQLite.
 
-## Quick start (macOS)
+## Quick start (macOS/Linux/Windows)
+
+Requirements:
+- Python 3.9+
 
 1) Create venv and install deps:
 
 ```bash
-python3 -m venv .venv
+python -m venv .venv
+```
+
+Activate venv:
+
+macOS/Linux:
+```bash
 source .venv/bin/activate
+```
+
+Windows (PowerShell):
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+Install deps:
+```bash
 pip install -r requirements.txt
 ```
 
