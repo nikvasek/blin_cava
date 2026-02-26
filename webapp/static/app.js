@@ -181,6 +181,7 @@ function main() {
   const cartTotalEl = document.getElementById('cartTotal');
   const orderListEl = document.getElementById('orderList');
   const checkoutBtn = document.getElementById('checkoutBtn');
+  const cartClearBtn = document.getElementById('cartClearBtn');
   const payBtn = document.getElementById('payBtn');
   const editBtn = document.getElementById('editBtn');
   const navHomeBtn = document.getElementById('navHome');
@@ -340,6 +341,32 @@ function main() {
     };
     prev.qty = Math.max(0, qty);
     cart.set(k, prev);
+    renderMenu();
+    renderSearch();
+    renderCart();
+    renderOrder();
+    updateCartBadge();
+    updateCartTotals();
+    updatePayBtn();
+  }
+
+  function setQtyByEntry(categoryName, title, qty) {
+    const k = keyOf(categoryName, title);
+    const prev = cart.get(k);
+    if (!prev) return;
+    prev.qty = Math.max(0, qty);
+    cart.set(k, prev);
+    renderMenu();
+    renderSearch();
+    renderCart();
+    renderOrder();
+    updateCartBadge();
+    updateCartTotals();
+    updatePayBtn();
+  }
+
+  function clearCart() {
+    cart.clear();
     renderMenu();
     renderSearch();
     renderCart();
@@ -511,7 +538,27 @@ function main() {
       center.appendChild(createEl('div', 'order-sub', x.category));
       row.appendChild(center);
 
-      row.appendChild(createEl('div', 'order-price', rub(x.price * x.qty)));
+      const right = createEl('div', 'cart-right');
+      right.appendChild(createEl('div', 'order-price', rub(x.price * x.qty)));
+
+      const pm = createEl('div', 'qty-row');
+      const dec = createEl('button', 'qty-btn', '−');
+      const qty = createEl('div', 'qty-num', String(x.qty));
+      const inc = createEl('button', 'qty-btn', '+');
+      dec.type = 'button';
+      inc.type = 'button';
+      dec.addEventListener('click', () => {
+        setQtyByEntry(x.category, x.title, x.qty - 1);
+      });
+      inc.addEventListener('click', () => {
+        setQtyByEntry(x.category, x.title, x.qty + 1);
+      });
+      pm.appendChild(dec);
+      pm.appendChild(qty);
+      pm.appendChild(inc);
+      right.appendChild(pm);
+
+      row.appendChild(right);
       cartListEl.appendChild(row);
     }
   }
@@ -595,6 +642,10 @@ function main() {
   navCartBtn?.addEventListener('click', () => {
     renderCart();
     setView('cart');
+  });
+
+  cartClearBtn?.addEventListener('click', () => {
+    clearCart();
   });
 
   checkoutBtn?.addEventListener('click', () => {
