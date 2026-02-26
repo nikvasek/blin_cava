@@ -39,8 +39,11 @@ body {
 }
 
 .logo {
-  width: 56px;
-  height: 56px;
+  width: 36px;
+  height: 36px;
+  max-width: 36px;
+  max-height: 36px;
+  flex-shrink: 0;
   border-radius: 50%;
   object-fit: contain;
   background: #fff;
