@@ -5,7 +5,7 @@ git push
 
 
 #команда комита и пуша в git:
-git add -A && git commit -m "update" && git push
+git add -A && git commit -m "menu" && git push
 
 или
 

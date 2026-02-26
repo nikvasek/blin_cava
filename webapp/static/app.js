@@ -169,12 +169,25 @@ function main() {
   const subtitleEl = document.getElementById('subtitle');
   const tabsEl = document.getElementById('tabs');
   const gridEl = document.getElementById('grid');
+  const homeViewEl = document.getElementById('homeView');
   const menuViewEl = document.getElementById('menuView');
+  const searchViewEl = document.getElementById('searchView');
+  const cartViewEl = document.getElementById('cartView');
   const orderViewEl = document.getElementById('orderView');
+  const categoryGridEl = document.getElementById('categoryGrid');
+  const searchInput = document.getElementById('searchInput');
+  const searchResultsEl = document.getElementById('searchResults');
+  const cartListEl = document.getElementById('cartList');
+  const cartTotalEl = document.getElementById('cartTotal');
   const orderListEl = document.getElementById('orderList');
-  const viewOrderBtn = document.getElementById('viewOrderBtn');
+  const checkoutBtn = document.getElementById('checkoutBtn');
   const payBtn = document.getElementById('payBtn');
   const editBtn = document.getElementById('editBtn');
+  const navHomeBtn = document.getElementById('navHome');
+  const navMenuBtn = document.getElementById('navMenu');
+  const navSearchBtn = document.getElementById('navSearch');
+  const navCartBtn = document.getElementById('navCart');
+  const cartBadgeEl = document.getElementById('cartBadge');
   const typeDeliveryBtn = document.getElementById('typeDelivery');
   const typePickupBtn = document.getElementById('typePickup');
   const addressField = document.getElementById('addressField');
@@ -190,7 +203,7 @@ function main() {
   const cart = new Map(); // key -> {category,title,price,qty}
   let currentCategory = null;
   let menu = null;
-  let view = 'menu'; // 'menu' | 'order'
+  let view = 'home'; // 'home' | 'menu' | 'search' | 'cart' | 'order'
   let orderType = 'delivery'; // 'delivery' | 'pickup'
 
   function cartEntries() {
@@ -205,38 +218,58 @@ function main() {
     return cartEntries().length > 0;
   }
 
-  function setView(next) {
-    view = next;
-    if (view === 'menu') {
-      menuViewEl?.classList.remove('hidden');
-      orderViewEl?.classList.add('hidden');
-      if (subtitleEl) subtitleEl.textContent = 'Выберите блюда и количество';
-    } else {
-      menuViewEl?.classList.add('hidden');
-      orderViewEl?.classList.remove('hidden');
-      if (subtitleEl) subtitleEl.textContent = 'Проверьте заказ и заполните доставку';
-    }
-    updateFooter();
+  function cartCount() {
+    return cartEntries().reduce((s, x) => s + x.qty, 0);
   }
 
-  function updateFooter() {
-    const total = cartTotal();
-    if (view === 'menu') {
-      payBtn?.classList.add('hidden');
-      if (hasItems()) {
-        viewOrderBtn?.classList.remove('hidden');
-        viewOrderBtn.textContent = `Посмотреть заказ · ${rub(total)}`;
-        viewOrderBtn.disabled = false;
-      } else {
-        viewOrderBtn?.classList.add('hidden');
-        viewOrderBtn.disabled = true;
-      }
-      return;
+  function setNavActive(key) {
+    navHomeBtn?.classList.toggle('active', key === 'home');
+    navMenuBtn?.classList.toggle('active', key === 'menu');
+    navSearchBtn?.classList.toggle('active', key === 'search');
+    navCartBtn?.classList.toggle('active', key === 'cart');
+  }
+
+  function setView(next) {
+    view = next;
+    homeViewEl?.classList.toggle('hidden', view !== 'home');
+    menuViewEl?.classList.toggle('hidden', view !== 'menu');
+    searchViewEl?.classList.toggle('hidden', view !== 'search');
+    cartViewEl?.classList.toggle('hidden', view !== 'cart');
+    orderViewEl?.classList.toggle('hidden', view !== 'order');
+    tabsEl?.classList.toggle('hidden', view !== 'menu');
+
+    if (subtitleEl) {
+      if (view === 'home') subtitleEl.textContent = 'Выберите категорию';
+      if (view === 'menu') subtitleEl.textContent = 'Выберите блюда и количество';
+      if (view === 'search') subtitleEl.textContent = 'Поиск по названию блюда';
+      if (view === 'cart') subtitleEl.textContent = 'Ваш выбор';
+      if (view === 'order') subtitleEl.textContent = 'Проверьте заказ и заполните доставку';
     }
 
-    viewOrderBtn?.classList.add('hidden');
-    payBtn?.classList.remove('hidden');
-    payBtn.textContent = `Оформить · ${rub(total)}`;
+    setNavActive(view === 'order' ? 'cart' : view);
+    updateCartTotals();
+    updatePayBtn();
+  }
+
+  function updateCartBadge() {
+    if (!cartBadgeEl) return;
+    const count = cartCount();
+    cartBadgeEl.textContent = String(count);
+    cartBadgeEl.classList.toggle('hidden', count === 0);
+  }
+
+  function updateCartTotals() {
+    const total = cartTotal();
+    if (cartTotalEl) cartTotalEl.textContent = rub(total);
+    if (checkoutBtn) {
+      checkoutBtn.textContent = hasItems() ? `Оформить · ${rub(total)}` : 'Оформить';
+      checkoutBtn.disabled = !hasItems();
+    }
+  }
+
+  function updatePayBtn() {
+    if (!payBtn) return;
+    payBtn.textContent = `Оформить · ${rub(cartTotal())}`;
     payBtn.disabled = !isFormValid();
   }
 
@@ -281,12 +314,12 @@ function main() {
       }
     }
     if (!isDelivery && deliveryTimeInput) deliveryTimeInput.value = '';
-    updateFooter();
+    updatePayBtn();
   }
 
   function wireValidation() {
     const onChange = () => {
-      updateFooter();
+      updatePayBtn();
     };
     nameInput?.addEventListener('input', onChange);
     phoneInput?.addEventListener('input', onChange);
@@ -308,13 +341,179 @@ function main() {
     prev.qty = Math.max(0, qty);
     cart.set(k, prev);
     renderMenu();
+    renderSearch();
+    renderCart();
     renderOrder();
-    updateFooter();
+    updateCartBadge();
+    updateCartTotals();
+    updatePayBtn();
   }
 
   function qtyOf(category, item) {
     const k = keyOf(category.name, item.title);
     return cart.get(k)?.qty || 0;
+  }
+
+  function categoryImage(category) {
+    const withImage = category.items.find(x => x.image);
+    return withImage?.image || '';
+  }
+
+  function buildMenuCard(category, item, showCategory) {
+    const q = qtyOf(category, item);
+
+    const card = createEl('div', 'menu-card');
+
+    const media = createEl('div', 'menu-media');
+    if (item.image) {
+      const img = createEl('img', 'menu-img');
+      img.alt = item.title;
+      img.loading = 'lazy';
+      img.src = item.image;
+      media.appendChild(img);
+    } else {
+      const emoji = createEl('div', 'menu-emoji', emojiFor(category.name));
+      media.appendChild(emoji);
+    }
+
+    const body = createEl('div', 'menu-body');
+    body.appendChild(createEl('div', 'menu-name', item.title));
+    if (showCategory) {
+      body.appendChild(createEl('div', 'menu-meta', category.name));
+    }
+    if (item.description) {
+      body.appendChild(createEl('div', 'menu-desc', item.description));
+    }
+
+    const right = createEl('div', 'menu-right');
+    right.appendChild(createEl('div', 'price-pill', rub(item.price)));
+
+    const actions = createEl('div', 'menu-actions');
+    if (q <= 0) {
+      const addBtn = createEl('button', 'add-pill', 'Добавить');
+      addBtn.type = 'button';
+      addBtn.addEventListener('click', () => {
+        setQty(category, item, 1);
+      });
+      actions.appendChild(addBtn);
+    } else {
+      const pm = createEl('div', 'qty-row');
+      const dec = createEl('button', 'qty-btn', '−');
+      const qty = createEl('div', 'qty-num', String(q));
+      const inc = createEl('button', 'qty-btn', '+');
+      dec.type = 'button';
+      inc.type = 'button';
+      dec.addEventListener('click', () => {
+        setQty(category, item, q - 1);
+      });
+      inc.addEventListener('click', () => {
+        setQty(category, item, q + 1);
+      });
+      pm.appendChild(dec);
+      pm.appendChild(qty);
+      pm.appendChild(inc);
+      actions.appendChild(pm);
+    }
+
+    right.appendChild(actions);
+
+    card.appendChild(media);
+    card.appendChild(body);
+    card.appendChild(right);
+    return card;
+  }
+
+  function renderCategories() {
+    if (!categoryGridEl) return;
+    categoryGridEl.innerHTML = '';
+
+    for (const category of menu.categories) {
+      const btn = createEl('button', 'category-card');
+      btn.type = 'button';
+      const media = createEl('div', 'category-media');
+      const imgUrl = categoryImage(category);
+      if (imgUrl) {
+        const img = createEl('img', 'category-img');
+        img.alt = category.name;
+        img.loading = 'lazy';
+        img.src = imgUrl;
+        media.appendChild(img);
+      } else {
+        media.appendChild(createEl('div', 'menu-emoji', emojiFor(category.name)));
+      }
+      btn.appendChild(media);
+      btn.appendChild(createEl('div', 'category-name', category.name));
+      btn.addEventListener('click', () => {
+        currentCategory = category.name;
+        renderTabs();
+        renderMenu();
+        setView('menu');
+      });
+      categoryGridEl.appendChild(btn);
+    }
+  }
+
+  function renderSearch() {
+    if (!searchResultsEl) return;
+    const q = (searchInput?.value || '').trim().toLowerCase();
+    searchResultsEl.innerHTML = '';
+
+    if (!q) {
+      searchResultsEl.appendChild(createEl('div', 'tile', 'Введите запрос для поиска'));
+      return;
+    }
+
+    const matches = [];
+    for (const category of menu.categories) {
+      for (const item of category.items) {
+        if (String(item.title).toLowerCase().includes(q)) {
+          matches.push({ category, item });
+        }
+      }
+    }
+
+    if (matches.length === 0) {
+      searchResultsEl.appendChild(createEl('div', 'tile', 'Ничего не найдено'));
+      return;
+    }
+
+    for (const entry of matches) {
+      searchResultsEl.appendChild(buildMenuCard(entry.category, entry.item, true));
+    }
+  }
+
+  function renderCart() {
+    if (!cartListEl) return;
+    cartListEl.innerHTML = '';
+
+    const entries = cartEntries();
+    if (entries.length === 0) {
+      cartListEl.appendChild(createEl('div', 'tile', 'Корзина пуста'));
+      return;
+    }
+
+    for (const x of entries) {
+      const row = createEl('div', 'order-row');
+      if (x.image) {
+        const media = createEl('div', 'order-emoji');
+        const img = createEl('img', 'order-img');
+        img.alt = x.title;
+        img.loading = 'lazy';
+        img.src = x.image;
+        media.appendChild(img);
+        row.appendChild(media);
+      } else {
+        row.appendChild(createEl('div', 'order-emoji', emojiFor(x.category)));
+      }
+
+      const center = createEl('div');
+      center.appendChild(createEl('div', 'order-name', `${x.title} ×${x.qty}`));
+      center.appendChild(createEl('div', 'order-sub', x.category));
+      row.appendChild(center);
+
+      row.appendChild(createEl('div', 'order-price', rub(x.price * x.qty)));
+      cartListEl.appendChild(row);
+    }
   }
 
   function renderMenu() {
@@ -323,64 +522,7 @@ function main() {
     if (!category) return;
 
     for (const item of category.items) {
-      const q = qtyOf(category, item);
-
-      const card = createEl('div', 'menu-card');
-
-      const media = createEl('div', 'menu-media');
-      if (item.image) {
-        const img = createEl('img', 'menu-img');
-        img.alt = item.title;
-        img.loading = 'lazy';
-        img.src = item.image;
-        media.appendChild(img);
-      } else {
-        const emoji = createEl('div', 'menu-emoji', emojiFor(category.name));
-        media.appendChild(emoji);
-      }
-
-      const body = createEl('div', 'menu-body');
-      body.appendChild(createEl('div', 'menu-name', item.title));
-      if (item.description) {
-        body.appendChild(createEl('div', 'menu-desc', item.description));
-      }
-
-      const right = createEl('div', 'menu-right');
-      right.appendChild(createEl('div', 'price-pill', rub(item.price)));
-
-      const actions = createEl('div', 'menu-actions');
-      if (q <= 0) {
-        const addBtn = createEl('button', 'add-pill', 'Добавить');
-        addBtn.type = 'button';
-        addBtn.addEventListener('click', () => {
-          setQty(category, item, 1);
-        });
-        actions.appendChild(addBtn);
-      } else {
-        const pm = createEl('div', 'qty-row');
-        const dec = createEl('button', 'qty-btn', '−');
-        const qty = createEl('div', 'qty-num', String(q));
-        const inc = createEl('button', 'qty-btn', '+');
-        dec.type = 'button';
-        inc.type = 'button';
-        dec.addEventListener('click', () => {
-          setQty(category, item, q - 1);
-        });
-        inc.addEventListener('click', () => {
-          setQty(category, item, q + 1);
-        });
-        pm.appendChild(dec);
-        pm.appendChild(qty);
-        pm.appendChild(inc);
-        actions.appendChild(pm);
-      }
-
-      right.appendChild(actions);
-
-      card.appendChild(media);
-      card.appendChild(body);
-      card.appendChild(right);
-      gridEl.appendChild(card);
+      gridEl.appendChild(buildMenuCard(category, item, false));
     }
   }
 
@@ -432,15 +574,34 @@ function main() {
     }
   }
 
-  viewOrderBtn?.addEventListener('click', () => {
+  editBtn?.addEventListener('click', () => {
+    setView('menu');
+  });
+
+  navHomeBtn?.addEventListener('click', () => {
+    setView('home');
+  });
+
+  navMenuBtn?.addEventListener('click', () => {
+    setView('menu');
+  });
+
+  navSearchBtn?.addEventListener('click', () => {
+    setView('search');
+    searchInput?.focus();
+    renderSearch();
+  });
+
+  navCartBtn?.addEventListener('click', () => {
+    renderCart();
+    setView('cart');
+  });
+
+  checkoutBtn?.addEventListener('click', () => {
     if (!hasItems()) return;
     renderOrder();
     setView('order');
     nameInput?.focus();
-  });
-
-  editBtn?.addEventListener('click', () => {
-    setView('menu');
   });
 
   typeDeliveryBtn?.addEventListener('click', () => {
@@ -491,15 +652,23 @@ function main() {
     }
   });
 
+  searchInput?.addEventListener('input', () => {
+    renderSearch();
+  });
+
   loadMenu()
     .then((m) => {
       menu = m;
       currentCategory = menu.categories[0]?.name || null;
       renderTabs();
       renderMenu();
+      renderCategories();
+      renderSearch();
+      renderCart();
       renderOrder();
       wireValidation();
-      setView('menu');
+      updateCartBadge();
+      setView('home');
       setOrderType('delivery');
     })
     .catch((err) => {

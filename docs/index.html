@@ -12,16 +12,39 @@
       <div class="header-row">
         <div class="header-text">
           <div class="title">Меню</div>
-          <div class="subtitle" id="subtitle">Выберите блюда и количество</div>
+          <div class="subtitle" id="subtitle">Выберите категорию</div>
         </div>
         <img class="logo" src="static/logo.png" alt="Zoriu Kava" />
       </div>
     </header>
 
     <main class="main">
-      <div class="tabs" id="tabs"></div>
-      <section id="menuView">
+      <div class="tabs hidden" id="tabs"></div>
+      <section id="homeView">
+        <div class="category-grid" id="categoryGrid"></div>
+      </section>
+
+      <section class="hidden" id="menuView">
         <div class="grid" id="grid"></div>
+      </section>
+
+      <section class="hidden" id="searchView">
+        <div class="search-box">
+          <input class="input" id="searchInput" placeholder="Поиск по названию" />
+        </div>
+        <div class="grid" id="searchResults"></div>
+      </section>
+
+      <section class="hidden" id="cartView">
+        <div class="cart-header">
+          <div class="cart-title">Корзина</div>
+        </div>
+        <div class="order-list" id="cartList"></div>
+        <div class="cart-total">
+          <div>Итого</div>
+          <div id="cartTotal">0.00 Br</div>
+        </div>
+        <button class="btn" id="checkoutBtn" type="button">Оформить</button>
       </section>
 
       <section class="hidden" id="orderView">
@@ -61,12 +84,55 @@
           <div class="field-label" id="addressLabel">Адрес доставки</div>
           <input class="input" id="addressInput" placeholder="Улица, дом, кв." autocomplete="street-address" />
         </label>
+
+        <div class="order-actions">
+          <button class="btn" id="payBtn" type="button">Оформить</button>
+        </div>
       </section>
     </main>
 
     <footer class="footer">
-      <button class="btn hidden" id="viewOrderBtn" type="button">Посмотреть заказ</button>
-      <button class="btn hidden" id="payBtn" type="button">Оформить</button>
+      <nav class="bottom-nav">
+        <button class="nav-btn active" id="navHome" type="button" aria-label="Домой">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 10.5L12 3l9 7.5" />
+              <path d="M5 10v10h14V10" />
+            </svg>
+          </span>
+          <span class="nav-label">Домой</span>
+        </button>
+        <button class="nav-btn" id="navMenu" type="button" aria-label="Меню">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="4" width="7" height="7" rx="2" />
+              <rect x="14" y="4" width="7" height="7" rx="2" />
+              <rect x="3" y="13" width="7" height="7" rx="2" />
+              <rect x="14" y="13" width="7" height="7" rx="2" />
+            </svg>
+          </span>
+          <span class="nav-label">Меню</span>
+        </button>
+        <button class="nav-btn" id="navSearch" type="button" aria-label="Поиск">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="6" />
+              <path d="M16.5 16.5L21 21" />
+            </svg>
+          </span>
+          <span class="nav-label">Поиск</span>
+        </button>
+        <button class="nav-btn" id="navCart" type="button" aria-label="Корзина">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 7h12l-1.2 12H7.2L6 7Z" />
+              <path d="M9 7a3 3 0 0 1 6 0" />
+            </svg>
+          </span>
+          <span class="nav-label">Корзина</span>
+          <span class="nav-badge hidden" id="cartBadge">0</span>
+        </button>
+      </nav>
     </footer>
 
     <script src="static/app.js?v=20260224-1"></script>
